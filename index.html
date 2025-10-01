@@ -25,23 +25,23 @@
     <input type="text" id="idcardInput" placeholder="IDカード番号" />
   </div>
 
-  <button id="submitBtn">部署確認・次へ</button>
+  <button id="submitBtn">次へ</button>
 
   <div id="result"></div>
-  <div class="note">※ 名前が記載されない場合は以下リンクにアクセスし、受付担当者に声をかけてください。https://forms.gle/TmsZPWfMpjj6XujL7</div>
+  <div class="note">
+    ※ 名前が記載されない場合は以下リンクにアクセスし、受付担当者に声をかけてください。<br>
+    <a href="https://forms.gle/TmsZPWfMpjj6XujL7" target="_blank">別フォームはこちら</a>
+  </div>
 
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
 
   <script>
     const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSpGDiZD4OrEiEzIh4DMRN0eFbHkBGZSnxewenjI-jnTstC1U07dQ0mfvNBM5KW9M88tL5fqQ8fyLWy/pub?output=csv"; 
     const googleFormBaseUrl = "https://docs.google.com/forms/d/e/1FAIpQLSfCHO8Ic_LePLxIXwTunyZGOh6WH2heDERT0ycrCDUUO0mUBg/viewform?usp=pp_url&entry.1288388977="; 
-    // googleFormBaseUrl の末尾は氏名用entryパラメータまで含めておく
-    // 例: "https://docs.google.com/forms/d/e/FORM_ID/viewform?usp=pp_url&entry.123456="
 
-    // 各Googleフォーム欄のentry番号
-    const entryIdCard = "352252719";   // IDカード番号欄
-    const entryDepartment = "1018926610"; // 部署欄
-    const entryAgency = "703933889";
+    const entryIdCard     = "352252719";   // IDカード欄
+    const entryDepartment = "1018926610";   // 部署欄
+    const entryAgency     = "703933889";   // 派遣会社欄
 
     let employees = [];
 
@@ -55,7 +55,8 @@
           employees = parsed.data.map(row=>({
             name: row.name ? row.name.trim() : "",
             department: row.department ? row.department.trim() : "",
-            idcard: row.idcard ? row.idcard.trim() : ""
+            idcard: row.idcard ? row.idcard.trim() : "",
+            agency: row.agency ? row.agency.trim() : ""
           })).filter(e=>e.name);
 
           const seen = new Set();
@@ -76,52 +77,36 @@
         });
     }
 
-    function searchDept(){
-      const raw = document.getElementById("nameInput").value || "";
-      const nameNormalized = normalizeName(raw);
-      if(!nameNormalized){
-        document.getElementById("result").textContent="氏名を入力してください";
-        document.getElementById("idcardContainer").style.display="none";
-        return null;
-      }
-
-      const matches = employees.filter(e=>normalizeName(e.name)===nameNormalized);
-      if(matches.length===0){
-        document.getElementById("result").textContent="該当する氏名が見つかりません";
-        document.getElementById("idcardContainer").style.display="none";
-        return null;
-      }
-
-      let emp = matches[0];
-      const deps = matches.length>1 ? [...new Set(matches.map(m=>m.department))].join(" / ") : emp.department;
-      document.getElementById("result").textContent = `${emp.name} さんの配置部署: 【${deps}】`;
-
-      const idInput = document.getElementById("idcardInput");
-      if(emp.idcard){ 
-        idInput.value = emp.idcard; 
-        idInput.readOnly = true;
-      } else {
-        idInput.value = "";
-        idInput.readOnly = false;
-      }
-      document.getElementById("idcardContainer").style.display="block";
-
-      return emp;
+    function searchEmployee(name){
+      return employees.find(e=>normalizeName(e.name)===normalizeName(name));
     }
 
     function goToGoogleForm(){
-      const emp = searchDept();
-      if(!emp) return;
-
-      let url = googleFormBaseUrl + encodeURIComponent(emp.name);
-
-      const idValue = document.getElementById("idcardInput").value.trim();
-      if(idValue){
-        url += "&entry." + entryIdCard + "=" + encodeURIComponent(idValue);
+      const rawName = document.getElementById("nameInput").value.trim();
+      if(!rawName){
+        document.getElementById("result").textContent="氏名を入力してください";
+        return;
       }
 
-      if(emp.department){
-        url += "&entry." + entryDepartment + "=" + encodeURIComponent(emp.department);
+      const emp = searchEmployee(rawName);
+      let url = googleFormBaseUrl + encodeURIComponent(rawName);
+
+      // CSVにある人 → 部署や派遣会社を追加
+      if(emp){
+        const idValue = emp.idcard || document.getElementById("idcardInput").value.trim();
+        if(idValue){
+          url += "&entry." + entryIdCard + "=" + encodeURIComponent(idValue);
+        }
+        if(emp.department){
+          url += "&entry." + entryDepartment + "=" + encodeURIComponent(emp.department);
+        }
+        if(emp.agency){
+          url += "&entry." + entryAgency + "=" + encodeURIComponent(emp.agency);
+        }
+        document.getElementById("result").textContent = `${emp.name} さんの情報を送信します`;
+      } else {
+        // CSVに無い人 → 名前だけ送る
+        document.getElementById("result").textContent = `${rawName} さん（新規）の情報を送信します`;
       }
 
       window.location.href = url;
@@ -136,5 +121,3 @@
   </script>
 </body>
 </html>
-
-

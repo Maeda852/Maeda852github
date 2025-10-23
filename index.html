@@ -56,94 +56,94 @@
 
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
   <script>
-    const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSpGDiZD4OrEiEzIh4DMRN0eFbHkBGZSnxewenjI-jnTstC1U07dQ0mfvNBM5KW9M88tL5fqQ8fyLWy/pub?output=csv";
-    const googleFormBaseUrl = "https://docs.google.com/forms/d/e/1FAIpQLSfCHO8Ic_LePLxIXwTunyZGOh6WH2heDERT0ycrCDUUO0mUBg/viewform?usp=pp_url&entry.1288388977=";
-    const entryIdCard = "352252719"; // IDカード欄
-    const entryDepartment = "1018926610"; // 部署欄
-    const entryAgency = "703933889"; // 派遣会社欄
+    document.addEventListener("DOMContentLoaded", function(){
 
-    let employees = [];
+      const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSpGDiZD4OrEiEzIh4DMRN0eFbHkBGZSnxewenjI-jnTstC1U07dQ0mfvNBM5KW9M88tL5fqQ8fyLWy/pub?output=csv";
+      const googleFormBaseUrl = "https://docs.google.com/forms/d/e/1FAIpQLSfCHO8Ic_LePLxIXwTunyZGOh6WH2heDERT0ycrCDUUO0mUBg/viewform?usp=pp_url&entry.1288388977=";
+      const entryIdCard = "352252719"; // IDカード欄
+      const entryDepartment = "1018926610"; // 部署欄
+      const entryAgency = "703933889"; // 派遣会社欄
 
-    // ★ 修正版：空白を除去して比較する関数
-    function normalizeName(s){
-      return (s || "")
-        .replace(/\s+/g, "")   // 半角・全角空白を削除
-        .trim()
-        .toLowerCase();
-    }
+      let employees = [];
 
-    function loadCsv(){
-      fetch(csvUrl)
-        .then(r=>r.text())
-        .then(text=>{
-          const parsed = Papa.parse(text,{header:true, skipEmptyLines:true});
-          employees = parsed.data.map(row=>({
-            name: row.name ? row.name.trim() : "",
-            department: row.department ? row.department.trim() : "",
-            idcard: row.idcard ? row.idcard.trim() : "",
-            agency: row.agency ? row.agency.trim() : ""
-          })).filter(e=>e.name);
+      // 空白削除・小文字化
+      function normalizeName(s){
+        return (s || "").replace(/\s+/g, "").trim().toLowerCase();
+      }
 
-          const seen = new Set();
-          const dl = document.getElementById("namelist");
-          dl.innerHTML="";
-          employees.forEach(e=>{
-            if(!seen.has(e.name)){
-              seen.add(e.name);
-              const opt = document.createElement("option");
-              opt.value = e.name;
-              dl.appendChild(opt);
-            }
+      function loadCsv(){
+        fetch(csvUrl)
+          .then(r=>r.text())
+          .then(text=>{
+            const parsed = Papa.parse(text,{header:true, skipEmptyLines:true});
+            employees = parsed.data.map(row=>({
+              name: row.name ? row.name.trim() : "",
+              department: row.department ? row.department.trim() : "",
+              idcard: row.idcard ? row.idcard.trim() : "",
+              agency: row.agency ? row.agency.trim() : ""
+            })).filter(e=>e.name);
+
+            const seen = new Set();
+            const dl = document.getElementById("namelist");
+            dl.innerHTML="";
+            employees.forEach(e=>{
+              if(!seen.has(e.name)){
+                seen.add(e.name);
+                const opt = document.createElement("option");
+                opt.value = e.name;
+                dl.appendChild(opt);
+              }
+            });
+          })
+          .catch(err=>{
+            document.getElementById("result").textContent="データ読み込みエラー";
+            console.error(err);
           });
-        })
-        .catch(err=>{
-          document.getElementById("result").textContent="データ読み込みエラー";
-          console.error(err);
-        });
-    }
-
-    function searchEmployee(name){
-      return employees.find(e => normalizeName(e.name) === normalizeName(name));
-    }
-
-    function goToGoogleForm(){
-      const rawName = document.getElementById("nameInput").value.trim();
-      if(!rawName){
-        document.getElementById("result").textContent="氏名を入力してください";
-        return;
       }
 
-      const emp = searchEmployee(rawName);
-      let url = googleFormBaseUrl + encodeURIComponent(rawName);
-
-      if(emp){
-        const idValue = emp.idcard || document.getElementById("idcardInput").value.trim();
-        if(idValue){
-          url += "&entry." + entryIdCard + "=" + encodeURIComponent(idValue);
-        }
-        if(emp.department){
-          url += "&entry." + entryDepartment + "=" + encodeURIComponent(emp.department);
-        }
-        if(emp.agency){
-          url += "&entry." + entryAgency + "=" + encodeURIComponent(emp.agency);
-        }
-        document.getElementById("result").textContent = `${emp.name} さんの情報を送信します`;
-      } else {
-        document.getElementById("result").textContent = `${rawName} さん（新規）の情報を送信します`;
+      function searchEmployee(name){
+        return employees.find(e => normalizeName(e.name) === normalizeName(name));
       }
 
-      window.location.href = url;
-    }
+      function goToGoogleForm(){
+        const rawName = document.getElementById("nameInput").value.trim();
+        if(!rawName){
+          document.getElementById("result").textContent="氏名を入力してください";
+          return;
+        }
 
-    document.getElementById("submitBtn").addEventListener("click", goToGoogleForm);
-    document.getElementById("nameInput").addEventListener("keypress", e=>{
-      if(e.key==="Enter"){
-        e.preventDefault();
-        goToGoogleForm();
+        const emp = searchEmployee(rawName);
+        let url = googleFormBaseUrl + encodeURIComponent(rawName.replace(/\s+/g,""));
+
+        if(emp){
+          const idValue = emp.idcard || document.getElementById("idcardInput").value.trim();
+          if(idValue){
+            url += "&entry." + entryIdCard + "=" + encodeURIComponent(idValue);
+          }
+          if(emp.department){
+            url += "&entry." + entryDepartment + "=" + encodeURIComponent(emp.department);
+          }
+          if(emp.agency){
+            url += "&entry." + entryAgency + "=" + encodeURIComponent(emp.agency);
+          }
+          document.getElementById("result").textContent = `${emp.name} さんの情報を送信します`;
+        } else {
+          document.getElementById("result").textContent = `${rawName} さん（新規）の情報を送信します`;
+        }
+
+        window.location.href = url;
       }
+
+      document.getElementById("submitBtn").addEventListener("click", goToGoogleForm);
+      document.getElementById("nameInput").addEventListener("keypress", e=>{
+        if(e.key==="Enter"){
+          e.preventDefault();
+          goToGoogleForm();
+        }
+      });
+
+      loadCsv();
     });
-
-    loadCsv();
   </script>
 </body>
 </html>

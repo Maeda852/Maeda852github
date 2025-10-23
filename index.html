@@ -109,11 +109,16 @@
           if(emp.department) url += "&entry." + entryDepartment + "=" + encodeURIComponent(emp.department);
           if(emp.agency) url += "&entry." + entryAgency + "=" + encodeURIComponent(emp.agency);
           document.getElementById("result").textContent = `${emp.name} さんの情報を送信します`;
+          window.location.href = url; // CSVにある人はそのまま送信
         } else {
-          document.getElementById("result").textContent = `${rawName} さん（新規）の情報を送信します`;
+          // 新規の場合は確認ポップアップ
+          if(confirm(`ご本人が登録した氏名と漢字等が一致しているか確認してください。\n\n氏名: ${rawName}\n送信してよろしいですか？`)){
+            window.location.href = url; // OKなら送信
+          } else {
+            document.getElementById("result").textContent = "送信をキャンセルしました";
+            return; // キャンセルなら中止
+          }
         }
-
-        window.location.href = url;
       }
 
       document.getElementById("submitBtn").addEventListener("click", goToGoogleForm);

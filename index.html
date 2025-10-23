@@ -11,10 +11,7 @@
       max-width:640px;
       margin:auto;
     }
-    h1 {
-      font-size:20px;
-      margin-bottom:8px;
-    }
+    h1 { font-size:20px; margin-bottom:8px; }
     input, button {
       font-size:16px;
       padding:10px;
@@ -23,16 +20,8 @@
       box-sizing:border-box;
     }
     button { cursor:pointer; }
-    #result {
-      margin-top:12px;
-      font-size:18px;
-      font-weight:600;
-    }
-    .note {
-      color:#666;
-      font-size:13px;
-      margin-top:8px;
-    }
+    #result { margin-top:12px; font-size:18px; font-weight:600; }
+    .note { color:#666; font-size:13px; margin-top:8px; }
   </style>
 </head>
 <body>
@@ -56,38 +45,37 @@
 
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
   <script>
-    document.addEventListener("DOMContentLoaded", function(){
+    document.addEventListener("DOMContentLoaded", function() {
 
       const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSpGDiZD4OrEiEzIh4DMRN0eFbHkBGZSnxewenjI-jnTstC1U07dQ0mfvNBM5KW9M88tL5fqQ8fyLWy/pub?output=csv";
       const googleFormBaseUrl = "https://docs.google.com/forms/d/e/1FAIpQLSfCHO8Ic_LePLxIXwTunyZGOh6WH2heDERT0ycrCDUUO0mUBg/viewform?usp=pp_url&entry.1288388977=";
-      const entryIdCard = "352252719"; // IDカード欄
-      const entryDepartment = "1018926610"; // 部署欄
-      const entryAgency = "703933889"; // 派遣会社欄
+      const entryIdCard = "352252719"; 
+      const entryDepartment = "1018926610"; 
+      const entryAgency = "703933889"; 
 
       let employees = [];
 
-      // 空白削除・小文字化
-      function normalizeName(s){
+      function normalizeName(s) {
         return (s || "").replace(/\s+/g, "").trim().toLowerCase();
       }
 
-      function loadCsv(){
+      function loadCsv() {
         fetch(csvUrl)
-          .then(r=>r.text())
-          .then(text=>{
-            const parsed = Papa.parse(text,{header:true, skipEmptyLines:true});
-            employees = parsed.data.map(row=>({
+          .then(r => r.text())
+          .then(text => {
+            const parsed = Papa.parse(text, {header:true, skipEmptyLines:true});
+            employees = parsed.data.map(row => ({
               name: row.name ? row.name.trim() : "",
               department: row.department ? row.department.trim() : "",
               idcard: row.idcard ? row.idcard.trim() : "",
               agency: row.agency ? row.agency.trim() : ""
-            })).filter(e=>e.name);
+            })).filter(e => e.name);
 
             const seen = new Set();
             const dl = document.getElementById("namelist");
-            dl.innerHTML="";
-            employees.forEach(e=>{
-              if(!seen.has(e.name)){
+            dl.innerHTML = "";
+            employees.forEach(e => {
+              if(!seen.has(e.name)) {
                 seen.add(e.name);
                 const opt = document.createElement("option");
                 opt.value = e.name;
@@ -95,20 +83,20 @@
               }
             });
           })
-          .catch(err=>{
-            document.getElementById("result").textContent="データ読み込みエラー";
+          .catch(err => {
+            document.getElementById("result").textContent = "データ読み込みエラー";
             console.error(err);
           });
       }
 
-      function searchEmployee(name){
+      function searchEmployee(name) {
         return employees.find(e => normalizeName(e.name) === normalizeName(name));
       }
 
-      function goToGoogleForm(){
+      function goToGoogleForm() {
         const rawName = document.getElementById("nameInput").value.trim();
         if(!rawName){
-          document.getElementById("result").textContent="氏名を入力してください";
+          document.getElementById("result").textContent = "氏名を入力してください";
           return;
         }
 
@@ -117,15 +105,9 @@
 
         if(emp){
           const idValue = emp.idcard || document.getElementById("idcardInput").value.trim();
-          if(idValue){
-            url += "&entry." + entryIdCard + "=" + encodeURIComponent(idValue);
-          }
-          if(emp.department){
-            url += "&entry." + entryDepartment + "=" + encodeURIComponent(emp.department);
-          }
-          if(emp.agency){
-            url += "&entry." + entryAgency + "=" + encodeURIComponent(emp.agency);
-          }
+          if(idValue) url += "&entry." + entryIdCard + "=" + encodeURIComponent(idValue);
+          if(emp.department) url += "&entry." + entryDepartment + "=" + encodeURIComponent(emp.department);
+          if(emp.agency) url += "&entry." + entryAgency + "=" + encodeURIComponent(emp.agency);
           document.getElementById("result").textContent = `${emp.name} さんの情報を送信します`;
         } else {
           document.getElementById("result").textContent = `${rawName} さん（新規）の情報を送信します`;
@@ -135,14 +117,15 @@
       }
 
       document.getElementById("submitBtn").addEventListener("click", goToGoogleForm);
-      document.getElementById("nameInput").addEventListener("keypress", e=>{
-        if(e.key==="Enter"){
+      document.getElementById("nameInput").addEventListener("keypress", e => {
+        if(e.key === "Enter") {
           e.preventDefault();
           goToGoogleForm();
         }
       });
 
       loadCsv();
+
     });
   </script>
 </body>
